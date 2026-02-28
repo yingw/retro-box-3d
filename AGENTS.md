@@ -136,3 +136,37 @@ function CameraController({ zoomTrigger }: { zoomTrigger: ... }) {
 - 初始距离: 12
 - 最小距离: 5
 - 最大距离: 20
+
+### 6. 已知问题
+
+**弃用警告**: `THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.`
+
+**说明**: 此警告来自 drei 库的 OrbitControls 内部实现，不影响功能。three.js r173+ 将 Clock 改为 Timer，但当前版本的 drei 仍在使用旧 API。
+
+**状态**: 已知问题，等待 drei 库更新修复。如需消除警告，可降级 three.js 至 r172 或等待新版 drei。
+
+### 7. 当前文件结构
+
+```
+src/
+  App.tsx          # 主组件，包含 Canvas、GameBox、Rotator、CameraController
+  main.tsx         # 入口文件
+  index.css        # 全局样式
+  App.css          # 组件样式
+public/
+  box-front.png    # 游戏盒正面图
+  box-side.png     # 游戏盒侧面图
+  box-back.png     # 游戏盒背面图
+  game2-front.png  # 游戏2正面图
+  game2-side.png   # 游戏2侧面图
+  game2-back.png   # 游戏2背面图
+```
+
+### 8. 主要组件
+
+| 组件 | 作用 |
+|------|------|
+| `App` | 主入口，管理主题切换和视距状态 |
+| `GameBox` | 渲染单个 3D 盒子，6 面平面 + 半透明倒角层 |
+| `Rotator` | 处理左键拖动旋转盒子 |
+| `CameraController` | 管理相机和 OrbitControls，处理缩放/平移 |
