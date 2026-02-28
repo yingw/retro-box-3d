@@ -12,10 +12,7 @@
 
 ## 演示视频
 
-<video width="100%" controls>
-  <source src="docs/screenclip.mp4" type="video/mp4">
-  您的浏览器不支持视频播放。
-</video>
+演示视频已保存至 [docs/screenclip.mp4](docs/screenclip.mp4)，可在本地查看。
 
 ## 功能特性
 
