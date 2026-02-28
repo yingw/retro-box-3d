@@ -1,23 +1,48 @@
 import { Canvas, useThree } from '@react-three/fiber'
-import { useTexture, OrbitControls } from '@react-three/drei'
-import { useState, useRef, useEffect } from 'react'
+import { useTexture, OrbitControls, Environment } from '@react-three/drei'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 
-function GameBox({ textureSet, groupRef }: { textureSet: string, groupRef: React.RefObject<THREE.Group | null> }) {
-  const front = useTexture(`/${textureSet}-front.png`)
-  const side = useTexture(`/${textureSet}-side.png`)
-  const back = useTexture(`/${textureSet}-back.png`)
+function GameBox({ textureSet, groupRef, lang }: { textureSet: string, groupRef: React.RefObject<THREE.Group | null>, lang: 'jp' | 'cn' }) {
+  const front = useTexture(lang === 'cn' ? `/${textureSet}_box-front(cn).png` : `/${textureSet}_box-front(jp).png`)
+  const side = useTexture(`/${textureSet}_box-side.png`)
+  const back = useTexture(`/${textureSet}_box-back.png`)
   
   const h = 2.9, w = 1.6, d = 0.35
+
+  const topTexture = useMemo(() => {
+    const frontImg = front.image as HTMLImageElement
+    const canvas = document.createElement('canvas')
+    canvas.width = frontImg.width
+    canvas.height = Math.round(frontImg.height * 0.121)
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(frontImg, 0, 0, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+  }, [front])
+
+  const bottomTexture = useMemo(() => {
+    const frontImg = front.image as HTMLImageElement
+    const canvas = document.createElement('canvas')
+    canvas.width = frontImg.width
+    canvas.height = Math.round(frontImg.height * 0.121)
+    const ctx = canvas.getContext('2d')!
+    const srcY = frontImg.height - canvas.height
+    ctx.drawImage(frontImg, 0, srcY, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+  }, [front])
   
   return (
     <group ref={groupRef}>
       <mesh position={[0, 0, d/2]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={front} /></mesh>
       <mesh position={[0, 0, -d/2]} rotation={[0, Math.PI, 0]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={back} /></mesh>
       <mesh position={[-w/2, 0, 0]} rotation={[0, -Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
-      <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial color="white" /></mesh>
-      <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
-      <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
+      <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
+      <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial map={topTexture} /></mesh>
+      <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial map={bottomTexture} /></mesh>
     </group>
   )
 }
@@ -105,7 +130,7 @@ function CameraController({ zoomTrigger }: { zoomTrigger: { type: 'in' | 'out' |
 }
 
 export default function App() {
-  const [t, setT] = useState('game')
+  const [lang, setLang] = useState<'jp' | 'cn'>('jp')
   const group1 = useRef<THREE.Group>(null)
   const group2 = useRef<THREE.Group>(null)
 
@@ -116,8 +141,9 @@ export default function App() {
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
         <div style={{ color: 'white', fontSize: 24, marginBottom: 10 }}>3D 盒子</div>
         <div style={{ marginBottom: 10 }}>
-          <button onClick={() => setT('game')} style={{ background: t==='game'?'#e94560':'#333', padding:'10px 20px', border:'none', borderRadius:8, color:'white', cursor:'pointer' }}>🎮 游戏</button>
-          <button onClick={() => setT('cd')} style={{ background: t==='cd'?'#0f3460':'#333', padding:'10px 20px', border:'none', borderRadius:8, color:'white', cursor:'pointer', marginLeft:10 }}>💿 CD</button>
+          <span style={{ color: '#aaa', fontSize: 12, marginRight: 10 }}>语言:</span>
+          <button onClick={() => setLang('jp')} style={{ background: lang==='jp'?'#e94560':'#333', padding:'5px 15px', border:'none', borderRadius:4, color:'white', cursor:'pointer', marginRight: 5 }}>日文</button>
+          <button onClick={() => setLang('cn')} style={{ background: lang==='cn'?'#e94560':'#333', padding:'5px 15px', border:'none', borderRadius:4, color:'white', cursor:'pointer' }}>中文</button>
         </div>
         <div>
           <span style={{ color: '#aaa', fontSize: 12, marginRight: 10 }}>视距:</span>
@@ -131,23 +157,18 @@ export default function App() {
       </div>
       <Canvas camera={{ position: [0, 0, 12], fov: 35 }} style={{ background: '#d2b48c' }}>
         <CameraController zoomTrigger={zoomTrigger} />
-        {t==='game' ? (
-          <>
-            <group position={[-1.2, 0, 0]}>
-              <GameBox textureSet="box" groupRef={group1} />
-            </group>
-            <group position={[1.2, 0, 0]}>
-              <GameBox textureSet="game2" groupRef={group2} />
-            </group>
-            <Rotator group1={group1} group2={group2} />
-          </>
-        ) : (
-          <mesh><boxGeometry args={[1.4,1.4,0.1]} /><meshStandardMaterial color="white" /></mesh>
-        )}
-        <ambientLight intensity={1} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
+        <group position={[-1.2, 0, 0]}>
+          <GameBox textureSet="game1" groupRef={group1} lang={lang} />
+        </group>
+        <group position={[1.2, 0, 0]}>
+          <GameBox textureSet="game2" groupRef={group2} lang={lang} />
+        </group>
+        <Rotator group1={group1} group2={group2} />
+        <ambientLight intensity={0.8} />
+        <directionalLight position={[5, 5, 5]} intensity={1.2} />
         <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.8} />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+        <Environment preset="city" background={false} />
       </Canvas>
     </div>
   )

@@ -66,14 +66,45 @@ pnpm preview      # 预览构建产物
   <mesh position={[0, 0, d/2]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={front} /></mesh>
   <mesh position={[0, 0, -d/2]} rotation={[0, Math.PI, 0]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={back} /></mesh>
   <mesh position={[-w/2, 0, 0]} rotation={[0, -Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
-  <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial color="white" /></mesh>
-  <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
-  <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
+  <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
+  <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial map={topTexture} /></mesh>
+  <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial map={bottomTexture} /></mesh>
 </group>
 ```
+**规则**:
+- front/back: 正面/背面图
+- left/right: 复制侧面图
+- top: 从正面图顶部裁剪 (约 12.1%)
+- bottom: 从正面图底部裁剪 (约 12.1%)
+
 **效果**: 贴图位置正确，边缘保持锐利。适合简单长方体，复杂模型建议用 Blender 建模导出 GLTF。
 
-### 3. 交互控制
+### 3. 双语言封面
+
+**文件命名规则**: `{game}_box-front(jp).png` / `{game}_box-front(cn).png`
+
+**UI**: 切换按钮 "日文" / "中文" 切换封面贴图
+
+```tsx
+const [lang, setLang] = useState<'jp' | 'cn'>('jp')
+
+<GameBox textureSet="game1" lang={lang} />
+```
+
+### 4. 光照增强
+
+**功能**: 添加环境光、定向光、点光源和 HDRI 环境贴图，提升物体表面光泽感
+
+**实现**:
+```tsx
+<ambientLight intensity={0.8} />
+<directionalLight position={[5, 5, 5]} intensity={1.2} />
+<pointLight position={[10, 10, 10]} intensity={1} />
+<pointLight position={[-10, -10, -10]} intensity={0.5} />
+<Environment preset="city" background={false} />
+```
+
+### 5. 视距控制 UI
 
 **功能**:
 - 左键拖动旋转盒子
@@ -134,13 +165,13 @@ function CameraController({ zoomTrigger }: { zoomTrigger: ... }) {
 
 **注意**: React Three Fiber 的 hooks (`useThree`, `useRef`) 只能在 Canvas 内部使用。
 
-### 5. 视距范围
+### 6. 视距范围
 
 - 初始距离: 12
 - 最小距离: 5
 - 最大距离: 20
 
-### 6. 已知问题
+### 7. 已知问题
 
 **弃用警告**: `THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.`
 
@@ -148,24 +179,21 @@ function CameraController({ zoomTrigger }: { zoomTrigger: ... }) {
 
 **状态**: 已知问题，等待 drei 库更新修复。如需消除警告，可降级 three.js 至 r172 或等待新版 drei。
 
-### 7. 当前文件结构
+### 8. 当前文件结构
 
 ```
-src/
-  App.tsx          # 主组件，包含 Canvas、GameBox、Rotator、CameraController
-  main.tsx         # 入口文件
-  index.css        # 全局样式
-  App.css          # 组件样式
 public/
-  box-front.png    # 游戏盒正面图
-  box-side.png     # 游戏盒侧面图
-  box-back.png     # 游戏盒背面图
-  game2-front.png  # 游戏2正面图
-  game2-side.png   # 游戏2侧面图
-  game2-back.png   # 游戏2背面图
+  game1_box-front(jp).png   # 游戏1日文封面
+  game1_box-front(cn).png   # 游戏1中文封面
+  game1_box-side.png        # 游戏1侧面图
+  game1_box-back.png        # 游戏1背面图
+  game2_box-front(jp).png   # 游戏2日文封面
+  game2_box-front(cn).png   # 游戏2中文封面
+  game2_box-side.png        # 游戏2侧面图
+  game2_box-back.png        # 游戏2背面图
 ```
 
-### 8. 主要组件
+### 9. 主要组件
 
 | 组件 | 作用 |
 |------|------|
