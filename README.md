@@ -1,73 +1,126 @@
-# React + TypeScript + Vite
+# 3D 盒子展示实验
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> 这是一个实验性质的项目，目前没有下一步开发计划。
 
-Currently, two official plugins are available:
+一个基于 React + Three.js 的 3D 盒子展示应用，用于学习和探索 React Three Fiber 技术。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 演示截图
 
-## React Compiler
+![日文封面](docs/screenshot1.png)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+![中文封面](docs/screenshot2.png)
 
-## Expanding the ESLint configuration
+## 演示视频
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+<video width="100%" controls>
+  <source src="docs/screenclip.mp4" type="video/mp4">
+  您的浏览器不支持视频播放。
+</video>
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 功能特性
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- 3D 盒子展示（两个游戏盒子并排）
+- 日文/中文封面一键切换
+- 交互操作：
+  - 左键拖动旋转盒子
+  - 右键拖动平移视角
+  - 滚轮缩放
+  - 键盘上下键缩放
+- UI 视距控制按钮（拉近/拉远/重置）
+- 棕褐色背景 + 增强光照效果
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 技术栈
+
+- **React 19** - UI 框架
+- **TypeScript** - 类型安全
+- **Vite 7** - 构建工具
+- **Three.js** - 3D 渲染引擎
+- **@react-three/fiber** - React Three.js 渲染器
+- **@react-three/drei** - 实用工具库
+
+## 运行项目
+
+```bash
+# 安装依赖
+pnpm install
+
+# 启动开发服务器
+pnpm dev
+
+# 构建生产版本
+pnpm build
+
+# 运行 ESLint 检查
+pnpm lint
+
+# 预览构建结果
+pnpm preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 打包部署
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Windows
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+# 需要安装 Node.js 和 pnpm
+
+# 1. 安装依赖
+pnpm install
+
+# 2. 构建
+pnpm build
+
+# 3. 打包（使用 electron-builder）
+npx electron-builder --win --x64
+
+# 输出文件在 dist/win-unpacked/ 目录
 ```
+
+### macOS
+
+```bash
+# 需要 macOS 系统和 Xcode
+
+# 1. 安装依赖
+pnpm install
+
+# 2. 构建
+pnpm build
+
+# 3. 打包
+npx electron-builder --mac --x64
+
+# 输出文件在 dist/mac/ 目录（.dmg 或 .zip）
+```
+
+**注意**: 本项目目前仅包含 Web 版本，打包相关配置需要额外添加 electron 集成。
+
+## 项目结构
+
+```
+box-3d/
+├── public/           # 静态资源（贴图）
+├── src/              # 源代码
+├── docs/             # 文档和截图
+├── package.json
+├── vite.config.ts
+└── README.md
+```
+
+## 贴图文件命名规则
+
+- `{game}_box-front(jp).png` - 日文封面
+- `{game}_box-front(cn).png` - 中文封面
+- `{game}_box-side.png` - 侧面图
+- `{game}_box-back.png` - 背面图
+
+### 封面图片来源
+
+- **日文封面**: [ScreenScraper](https://screenscraper.fr)
+- **中文封面**: 小哲子、新寶
+
+感谢两位中文封面的原作者。
+
+## License
+
+MIT
