@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# macOS 垃圾文件
+._*
+
+# 临时文件
+temp/
