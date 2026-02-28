@@ -1,7 +1,46 @@
-import { Canvas } from '@react-three/fiber'
-import { useTexture } from '@react-three/drei'
+import { Canvas, useThree } from '@react-three/fiber'
+import { useTexture, OrbitControls } from '@react-three/drei'
 import { useState, useRef, useEffect } from 'react'
 import * as THREE from 'three'
+
+function CameraController({ zoomTrigger }: { zoomTrigger: { type: 'in' | 'out' | 'reset' } | null }) {
+  const { camera } = useThree()
+  const controlsRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const distance = camera.position.length()
+      if (e.key === 'ArrowUp') {
+        const newDist = Math.max(5, distance * 0.9)
+        camera.position.normalize().multiplyScalar(newDist)
+      } else if (e.key === 'ArrowDown') {
+        const newDist = Math.min(20, distance * 1.1)
+        camera.position.normalize().multiplyScalar(newDist)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [camera])
+
+  useEffect(() => {
+    if (!zoomTrigger || !controlsRef.current) return
+
+    if (zoomTrigger.type === 'in') {
+      const distance = camera.position.length()
+      const newDist = Math.max(5, distance * 0.9)
+      camera.position.normalize().multiplyScalar(newDist)
+    } else if (zoomTrigger.type === 'out') {
+      const distance = camera.position.length()
+      const newDist = Math.min(20, distance * 1.1)
+      camera.position.normalize().multiplyScalar(newDist)
+    } else if (zoomTrigger.type === 'reset') {
+      camera.position.set(0, 0, 12)
+    }
+    controlsRef.current.update()
+  }, [zoomTrigger, camera])
+
+  return <OrbitControls ref={controlsRef} enableRotate={false} enableZoom={true} enablePan={true} zoomSpeed={0.5} minDistance={5} maxDistance={20} />
+}
 
 function GameBox({ textureSet, groupRef }: { textureSet: string, groupRef: React.RefObject<THREE.Group | null> }) {
   const front = useTexture(`/${textureSet}-front.png`)
@@ -18,6 +57,11 @@ function GameBox({ textureSet, groupRef }: { textureSet: string, groupRef: React
       <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial color="white" /></mesh>
       <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
       <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
+      
+      <mesh>
+        <boxGeometry args={[w + 0.04, h + 0.04, d + 0.04]} />
+        <meshStandardMaterial color="#d2b48c" transparent opacity={0.3} />
+      </mesh>
     </group>
   )
 }
@@ -25,9 +69,10 @@ function GameBox({ textureSet, groupRef }: { textureSet: string, groupRef: React
 function Rotator({ group1, group2 }: { group1: React.RefObject<THREE.Group | null>, group2: React.RefObject<THREE.Group | null> }) {
   const isDragging = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
-  
+
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
+      if (e.button !== 0) return
       isDragging.current = true
       lastPos.current = { x: e.clientX, y: e.clientY }
     }
@@ -46,16 +91,21 @@ function Rotator({ group1, group2 }: { group1: React.RefObject<THREE.Group | nul
     const onUp = () => {
       isDragging.current = false
     }
+    const onContextMenu = (e: MouseEvent) => {
+      e.preventDefault()
+    }
     window.addEventListener('pointerdown', onDown)
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
+    window.addEventListener('contextmenu', onContextMenu)
     return () => {
       window.removeEventListener('pointerdown', onDown)
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('contextmenu', onContextMenu)
     }
   }, [group1, group2])
-  
+
   return null
 }
 
@@ -64,14 +114,28 @@ export default function App() {
   const group1 = useRef<THREE.Group>(null)
   const group2 = useRef<THREE.Group>(null)
 
+  const [zoomTrigger, setZoomTrigger] = useState<{ type: 'in' | 'out' | 'reset' } | null>(null)
+
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#222', touchAction: 'none' }}>
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10 }}>
         <div style={{ color: 'white', fontSize: 24, marginBottom: 10 }}>3D 盒子</div>
-        <button onClick={() => setT('game')} style={{ background: t==='game'?'#e94560':'#333', padding:'10px 20px', border:'none', borderRadius:8, color:'white', cursor:'pointer' }}>🎮 游戏</button>
-        <button onClick={() => setT('cd')} style={{ background: t==='cd'?'#0f3460':'#333', padding:'10px 20px', border:'none', borderRadius:8, color:'white', cursor:'pointer', marginLeft:10 }}>💿 CD</button>
+        <div style={{ marginBottom: 10 }}>
+          <button onClick={() => setT('game')} style={{ background: t==='game'?'#e94560':'#333', padding:'10px 20px', border:'none', borderRadius:8, color:'white', cursor:'pointer' }}>🎮 游戏</button>
+          <button onClick={() => setT('cd')} style={{ background: t==='cd'?'#0f3460':'#333', padding:'10px 20px', border:'none', borderRadius:8, color:'white', cursor:'pointer', marginLeft:10 }}>💿 CD</button>
+        </div>
+        <div>
+          <span style={{ color: '#aaa', fontSize: 12, marginRight: 10 }}>视距:</span>
+          <button onClick={() => setZoomTrigger({ type: 'in' })} style={{ background: '#333', padding:'5px 15px', border:'none', borderRadius:4, color:'white', cursor:'pointer', marginRight: 5 }}>拉近</button>
+          <button onClick={() => setZoomTrigger({ type: 'out' })} style={{ background: '#333', padding:'5px 15px', border:'none', borderRadius:4, color:'white', cursor:'pointer', marginRight: 5 }}>拉远</button>
+          <button onClick={() => setZoomTrigger({ type: 'reset' })} style={{ background: '#333', padding:'5px 15px', border:'none', borderRadius:4, color:'white', cursor:'pointer' }}>重置</button>
+        </div>
+        <div style={{ marginTop: 10, fontSize: 11, color: '#666' }}>
+          左键拖动旋转 | 右键拖动平移 | 滚轮缩放
+        </div>
       </div>
-      <Canvas camera={{ position: [0, 0, 10], fov: 35 }} style={{ background: '#d2b48c' }}>
+      <Canvas camera={{ position: [0, 0, 12], fov: 35 }} style={{ background: '#d2b48c' }}>
+        <CameraController zoomTrigger={zoomTrigger} />
         {t==='game' ? (
           <>
             <group position={[-1.2, 0, 0]}>
