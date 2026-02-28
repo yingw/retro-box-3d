@@ -3,45 +3,6 @@ import { useTexture, OrbitControls } from '@react-three/drei'
 import { useState, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 
-function CameraController({ zoomTrigger }: { zoomTrigger: { type: 'in' | 'out' | 'reset' } | null }) {
-  const { camera } = useThree()
-  const controlsRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      const distance = camera.position.length()
-      if (e.key === 'ArrowUp') {
-        const newDist = Math.max(5, distance * 0.9)
-        camera.position.normalize().multiplyScalar(newDist)
-      } else if (e.key === 'ArrowDown') {
-        const newDist = Math.min(20, distance * 1.1)
-        camera.position.normalize().multiplyScalar(newDist)
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [camera])
-
-  useEffect(() => {
-    if (!zoomTrigger || !controlsRef.current) return
-
-    if (zoomTrigger.type === 'in') {
-      const distance = camera.position.length()
-      const newDist = Math.max(5, distance * 0.9)
-      camera.position.normalize().multiplyScalar(newDist)
-    } else if (zoomTrigger.type === 'out') {
-      const distance = camera.position.length()
-      const newDist = Math.min(20, distance * 1.1)
-      camera.position.normalize().multiplyScalar(newDist)
-    } else if (zoomTrigger.type === 'reset') {
-      camera.position.set(0, 0, 12)
-    }
-    controlsRef.current.update()
-  }, [zoomTrigger, camera])
-
-  return <OrbitControls ref={controlsRef} enableRotate={false} enableZoom={true} enablePan={true} zoomSpeed={0.5} minDistance={5} maxDistance={20} />
-}
-
 function GameBox({ textureSet, groupRef }: { textureSet: string, groupRef: React.RefObject<THREE.Group | null> }) {
   const front = useTexture(`/${textureSet}-front.png`)
   const side = useTexture(`/${textureSet}-side.png`)
@@ -57,11 +18,6 @@ function GameBox({ textureSet, groupRef }: { textureSet: string, groupRef: React
       <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial color="white" /></mesh>
       <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
       <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
-      
-      <mesh>
-        <boxGeometry args={[w + 0.04, h + 0.04, d + 0.04]} />
-        <meshStandardMaterial color="#d2b48c" transparent opacity={0.3} />
-      </mesh>
     </group>
   )
 }
@@ -107,6 +63,45 @@ function Rotator({ group1, group2 }: { group1: React.RefObject<THREE.Group | nul
   }, [group1, group2])
 
   return null
+}
+
+function CameraController({ zoomTrigger }: { zoomTrigger: { type: 'in' | 'out' | 'reset' } | null }) {
+  const { camera } = useThree()
+  const controlsRef = useRef<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const distance = camera.position.length()
+      if (e.key === 'ArrowUp') {
+        const newDist = Math.max(5, distance * 0.9)
+        camera.position.normalize().multiplyScalar(newDist)
+      } else if (e.key === 'ArrowDown') {
+        const newDist = Math.min(20, distance * 1.1)
+        camera.position.normalize().multiplyScalar(newDist)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [camera])
+
+  useEffect(() => {
+    if (!zoomTrigger || !controlsRef.current) return
+
+    if (zoomTrigger.type === 'in') {
+      const distance = camera.position.length()
+      const newDist = Math.max(5, distance * 0.9)
+      camera.position.normalize().multiplyScalar(newDist)
+    } else if (zoomTrigger.type === 'out') {
+      const distance = camera.position.length()
+      const newDist = Math.min(20, distance * 1.1)
+      camera.position.normalize().multiplyScalar(newDist)
+    } else if (zoomTrigger.type === 'reset') {
+      camera.position.set(0, 0, 12)
+    }
+    controlsRef.current.update()
+  }, [zoomTrigger, camera])
+
+  return <OrbitControls ref={controlsRef} enableRotate={false} enableZoom={true} enablePan={true} zoomSpeed={0.5} minDistance={5} maxDistance={20} />
 }
 
 export default function App() {

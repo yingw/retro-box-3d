@@ -52,23 +52,26 @@ pnpm preview      # 预览构建产物
 **方案 B (失败)**: Sprite Atlas 拼图
 
 将 6 个面的图片拼成一张大图，用作 RoundedBox 的纹理。
-**问题**: RoundedBox 的 UV 映射顺序未知，难以正确对应每个面。
+**尝试**: 创建 2行3列的 atlas，top/bottom 从正面图裁剪（不是缩放）。
+**问题**: RoundedBox 的 UV 映射顺序未公开文档，难以正确对应每个面。多次尝试排列顺序均失败。
 
-**方案 C (成功)**: 原 6 面 plane + 半透明倒角层
+**方案 C (放弃)**: 原 6 面 plane + 半透明倒角层
+
+半透明层视觉效果不自然，已放弃。
+
+**最终方案 (当前)**: 6 面独立 planeGeometry
 
 ```tsx
 <group>
-  {/* 6 个独立平面贴图 */}
-  <mesh position={[0, 0, d/2]}><planeGeometry /><meshStandardMaterial map={front} /></mesh>
-  ...
-  {/* 半透明倒角层 */}
-  <mesh>
-    <boxGeometry args={[w + 0.04, h + 0.04, d + 0.04]} />
-    <meshStandardMaterial color="#d2b48c" transparent opacity={0.3} />
-  </mesh>
+  <mesh position={[0, 0, d/2]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={front} /></mesh>
+  <mesh position={[0, 0, -d/2]} rotation={[0, Math.PI, 0]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={back} /></mesh>
+  <mesh position={[-w/2, 0, 0]} rotation={[0, -Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
+  <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial color="white" /></mesh>
+  <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
+  <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial color="white" /></mesh>
 </group>
 ```
-**效果**: 内部保持清晰贴图，外部包裹半透明层模拟倒角。
+**效果**: 贴图位置正确，边缘保持锐利。适合简单长方体，复杂模型建议用 Blender 建模导出 GLTF。
 
 ### 3. 交互控制
 
@@ -167,6 +170,6 @@ public/
 | 组件 | 作用 |
 |------|------|
 | `App` | 主入口，管理主题切换和视距状态 |
-| `GameBox` | 渲染单个 3D 盒子，6 面平面 + 半透明倒角层 |
+| `GameBox` | 渲染单个 3D 盒子，6 个独立平面分别贴图 |
 | `Rotator` | 处理左键拖动旋转盒子 |
 | `CameraController` | 管理相机和 OrbitControls，处理缩放/平移 |
