@@ -191,6 +191,14 @@ public/
   game2_box-front(cn).png   # 游戏2中文封面
   game2_box-side.png        # 游戏2侧面图
   game2_box-back.png        # 游戏2背面图
+  potsdamer_platz_1k.hdr   # 本地 HDR 环境贴图
+  Super Metroid (moby)/
+    4525515-super-metroid-snes-front-cover.jpg       # 日文封面
+    4525515-super-metroid-snes-front-cover(cn).jpg  # 中文封面
+    4525651-super-metroid-snes-back-cover.jpg        # 背面
+    1373165-super-metroid-snes-spinesides-Top.jpg    # 顶部
+    1373657-super-metroid-snes-spinesides-Left.jpg   # 左侧
+    1372277-super-metroid-snes-spinesides-Right.jpg  # 右侧
 ```
 
 ### 9. 主要组件
@@ -199,5 +207,57 @@ public/
 |------|------|
 | `App` | 主入口，管理主题切换和视距状态 |
 | `GameBox` | 渲染单个 3D 盒子，6 个独立平面分别贴图 |
-| `Rotator` | 处理左键拖动旋转盒子 |
-| `CameraController` | 管理相机和 OrbitControls，处理缩放/平移 |
+| `SuperMetroidBox` | 横向卡带盒子，支持中英文切换 |
+| `Rotator` | 处理左键旋转、右键平移物体 |
+| `CameraController` | 管理相机和 OrbitControls，处理缩放 |
+
+### 10. 第三个盒子 (Super Metroid)
+
+**卡带方向**: 横向 (w > h)
+
+**原始图片尺寸**:
+| 图片 | 分辨率 |
+|------|--------|
+| front-cover | 1158 x 800 |
+| back-cover | 1158 x 800 |
+| spinesides-Top | 1200 x 212 |
+| spinesides-Left | 195 x 800 |
+| spinesides-Right | 194 x 800 |
+
+**3D 尺寸**: w=2.9, h=2.0, d=0.49
+
+**纹理处理**:
+- Top: 先缩放宽度至 1158，再裁剪高度至 195
+- Right: 缩放宽度至 195
+
+**中英文切换**: 通过 `lang` 属性切换 `front-cover.jpg` / `front-cover(cn).jpg`
+
+### 11. 阴影设置
+
+**实现**:
+```tsx
+<Canvas shadows>
+  <directionalLight castShadow shadow-mapSize={[1024, 1024]} />
+  <mesh receiveShadow><planeGeometry /></mesh>
+  <mesh castShadow receiveShadow><planeGeometry /><meshStandardMaterial /></mesh>
+</Canvas>
+```
+
+**地面**: 位于 y=-1.5，物体位于 y=0.95 (game1/game2) 和 y=0.5 (Super Metroid)，形成悬空效果。
+
+### 12. 交互控制
+
+- **左键拖动**: 旋转所有盒子
+- **右键拖动**: 平移所有盒子（上下左右）
+- **滚轮/键盘上下**: 缩放视角
+- **UI 按钮**: 拉近/拉远/重置
+
+### 13. HDR 本地化
+
+**问题**: drei 的 Environment 组件默认从 GitHub 加载 HDR，外网访问慢/失败。
+
+**解决**: 下载 HDR 文件到本地 `public/` 目录，使用 `files` 属性加载：
+
+```tsx
+<Environment files="/potsdamer_platz_1k.hdr" background={false} />
+```

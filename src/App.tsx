@@ -37,35 +37,99 @@ function GameBox({ textureSet, groupRef, lang }: { textureSet: string, groupRef:
   
   return (
     <group ref={groupRef}>
-      <mesh position={[0, 0, d/2]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={front} /></mesh>
-      <mesh position={[0, 0, -d/2]} rotation={[0, Math.PI, 0]}><planeGeometry args={[w, h]} /><meshStandardMaterial map={back} /></mesh>
-      <mesh position={[-w/2, 0, 0]} rotation={[0, -Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
-      <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]}><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
-      <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial map={topTexture} /></mesh>
-      <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]}><planeGeometry args={[w, d]} /><meshStandardMaterial map={bottomTexture} /></mesh>
+      <mesh position={[0, 0, d/2]} castShadow receiveShadow><planeGeometry args={[w, h]} /><meshStandardMaterial map={front} /></mesh>
+      <mesh position={[0, 0, -d/2]} rotation={[0, Math.PI, 0]} castShadow receiveShadow><planeGeometry args={[w, h]} /><meshStandardMaterial map={back} /></mesh>
+      <mesh position={[-w/2, 0, 0]} rotation={[0, -Math.PI/2, 0]} castShadow receiveShadow><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
+      <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]} castShadow receiveShadow><planeGeometry args={[d, h]} /><meshStandardMaterial map={side} /></mesh>
+      <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]} castShadow receiveShadow><planeGeometry args={[w, d]} /><meshStandardMaterial map={topTexture} /></mesh>
+      <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]} castShadow receiveShadow><planeGeometry args={[w, d]} /><meshStandardMaterial map={bottomTexture} /></mesh>
     </group>
   )
 }
 
-function Rotator({ group1, group2 }: { group1: React.RefObject<THREE.Group | null>, group2: React.RefObject<THREE.Group | null> }) {
+function SuperMetroidBox({ groupRef, lang }: { groupRef: React.RefObject<THREE.Group | null>, lang: 'jp' | 'cn' }) {
+  const front = useTexture(lang === 'cn' ? '/Super Metroid (moby)/4525515-super-metroid-snes-front-cover(cn).jpg' : '/Super Metroid (moby)/4525515-super-metroid-snes-front-cover.jpg')
+  const back = useTexture('/Super Metroid (moby)/4525651-super-metroid-snes-back-cover.jpg')
+  const top = useTexture('/Super Metroid (moby)/1373165-super-metroid-snes-spinesides-Top.jpg')
+  const left = useTexture('/Super Metroid (moby)/1373657-super-metroid-snes-spinesides-Left.jpg')
+  const right = useTexture('/Super Metroid (moby)/1372277-super-metroid-snes-spinesides-Right.jpg')
+
+  const w = 2.9, h = 2.0, d = 0.49
+
+  const processedTop = useMemo(() => {
+    const topImg = top.image as HTMLImageElement
+    const scale = 1158 / topImg.width
+    const scaledHeight = topImg.height * scale
+    const targetHeight = 195
+    const cropY = (scaledHeight - targetHeight) / 2
+
+    const canvas = document.createElement('canvas')
+    canvas.width = 1158
+    canvas.height = targetHeight
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(topImg, 0, cropY, topImg.width, scaledHeight - cropY * 2, 0, 0, canvas.width, canvas.height)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+  }, [top])
+
+  const processedRight = useMemo(() => {
+    const rightImg = right.image as HTMLImageElement
+    const canvas = document.createElement('canvas')
+    canvas.width = 195
+    canvas.height = rightImg.height
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(rightImg, 0, 0, canvas.width, canvas.height)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    return tex
+  }, [right])
+
+  return (
+    <group ref={groupRef}>
+      <mesh position={[0, 0, d/2]} castShadow receiveShadow><planeGeometry args={[w, h]} /><meshStandardMaterial map={front} /></mesh>
+      <mesh position={[0, 0, -d/2]} rotation={[0, Math.PI, 0]} castShadow receiveShadow><planeGeometry args={[w, h]} /><meshStandardMaterial map={back} /></mesh>
+      <mesh position={[-w/2, 0, 0]} rotation={[0, -Math.PI/2, 0]} castShadow receiveShadow><planeGeometry args={[d, h]} /><meshStandardMaterial map={left} /></mesh>
+      <mesh position={[w/2, 0, 0]} rotation={[0, Math.PI/2, 0]} castShadow receiveShadow><planeGeometry args={[d, h]} /><meshStandardMaterial map={processedRight} /></mesh>
+      <mesh position={[0, h/2, 0]} rotation={[-Math.PI/2, 0, 0]} castShadow receiveShadow><planeGeometry args={[w, d]} /><meshStandardMaterial map={processedTop} /></mesh>
+      <mesh position={[0, -h/2, 0]} rotation={[Math.PI/2, 0, 0]} castShadow receiveShadow><planeGeometry args={[w, d]} /><meshStandardMaterial map={processedTop} /></mesh>
+    </group>
+  )
+}
+
+function Rotator({ group1, group2, group3 }: { group1: React.RefObject<THREE.Group | null>, group2: React.RefObject<THREE.Group | null>, group3: React.RefObject<THREE.Group | null> }) {
   const isDragging = useRef(false)
+  const dragButton = useRef(0)
   const lastPos = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
-      if (e.button !== 0) return
       isDragging.current = true
+      dragButton.current = e.button
       lastPos.current = { x: e.clientX, y: e.clientY }
     }
     const onMove = (e: PointerEvent) => {
       if (!isDragging.current) return
       const dx = e.clientX - lastPos.current.x
       const dy = e.clientY - lastPos.current.y
-      if (group1.current && group2.current) {
-        group1.current.rotation.y += dx * 0.01
-        group1.current.rotation.x += dy * 0.01
-        group2.current.rotation.y += dx * 0.01
-        group2.current.rotation.x += dy * 0.01
+      if (dragButton.current === 0) {
+        if (group1.current && group2.current && group3.current) {
+          group1.current.rotation.y += dx * 0.01
+          group1.current.rotation.x += dy * 0.01
+          group2.current.rotation.y += dx * 0.01
+          group2.current.rotation.x += dy * 0.01
+          group3.current.rotation.y += dx * 0.01
+          group3.current.rotation.x += dy * 0.01
+        }
+      } else if (dragButton.current === 2) {
+        if (group1.current && group2.current && group3.current) {
+          group1.current.position.x += dx * 0.01
+          group1.current.position.y -= dy * 0.01
+          group2.current.position.x += dx * 0.01
+          group2.current.position.y -= dy * 0.01
+          group3.current.position.x += dx * 0.01
+          group3.current.position.y -= dy * 0.01
+        }
       }
       lastPos.current = { x: e.clientX, y: e.clientY }
     }
@@ -85,7 +149,7 @@ function Rotator({ group1, group2 }: { group1: React.RefObject<THREE.Group | nul
       window.removeEventListener('pointerup', onUp)
       window.removeEventListener('contextmenu', onContextMenu)
     }
-  }, [group1, group2])
+  }, [group1, group2, group3])
 
   return null
 }
@@ -126,13 +190,14 @@ function CameraController({ zoomTrigger }: { zoomTrigger: { type: 'in' | 'out' |
     controlsRef.current.update()
   }, [zoomTrigger, camera])
 
-  return <OrbitControls ref={controlsRef} enableRotate={false} enableZoom={true} enablePan={true} zoomSpeed={0.5} minDistance={5} maxDistance={20} />
+  return <OrbitControls ref={controlsRef} enableRotate={false} enableZoom={true} enablePan={false} zoomSpeed={0.5} minDistance={5} maxDistance={20} />
 }
 
 export default function App() {
   const [lang, setLang] = useState<'jp' | 'cn'>('jp')
   const group1 = useRef<THREE.Group>(null)
   const group2 = useRef<THREE.Group>(null)
+  const group3 = useRef<THREE.Group>(null)
 
   const [zoomTrigger, setZoomTrigger] = useState<{ type: 'in' | 'out' | 'reset' } | null>(null)
 
@@ -155,20 +220,25 @@ export default function App() {
           左键拖动旋转 | 右键拖动平移 | 滚轮缩放
         </div>
       </div>
-      <Canvas camera={{ position: [0, 0, 12], fov: 35 }} style={{ background: '#d2b48c' }}>
+      <Canvas shadows camera={{ position: [0, 0, 14], fov: 35 }} style={{ background: '#d2b48c' }}>
         <CameraController zoomTrigger={zoomTrigger} />
-        <group position={[-1.2, 0, 0]}>
+        <group position={[-2.4, 0.95, 0]}>
           <GameBox textureSet="game1" groupRef={group1} lang={lang} />
         </group>
-        <group position={[1.2, 0, 0]}>
+        <group position={[0, 0.95, 0]}>
           <GameBox textureSet="game2" groupRef={group2} lang={lang} />
         </group>
-        <Rotator group1={group1} group2={group2} />
-        <ambientLight intensity={0.8} />
-        <directionalLight position={[5, 5, 5]} intensity={1.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
-        <Environment preset="city" background={false} />
+        <group position={[2.6, 0.5, 0]}>
+          <SuperMetroidBox groupRef={group3} lang={lang} />
+        </group>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.5, 0]} receiveShadow>
+          <planeGeometry args={[50, 50]} />
+          <meshStandardMaterial color="#b8956e" />
+        </mesh>
+        <Rotator group1={group1} group2={group2} group3={group3} />
+        <Environment files="/potsdamer_platz_1k.hdr" background={false} />
+        <ambientLight intensity={0.4} />
+        <directionalLight position={[5, 10, 5]} intensity={3} castShadow shadow-mapSize={[1024, 1024]} shadow-camera-far={50} shadow-camera-left={-10} shadow-camera-right={10} shadow-camera-top={10} shadow-camera-bottom={-10} shadow-bias={-0.0001} />
       </Canvas>
     </div>
   )
